@@ -55,3 +55,7 @@ Read and follow the instructions carefully.
 5) Create a function to format a date as MONTH DAY, YEAR
 
 6) Create store procedures to perform the registration to a tournament
+
+ERD DIagram
+
+https://app.diagrams.net/?libs=general;er#W9b0e79949930287c%2F9B0E79949930287C!1193
