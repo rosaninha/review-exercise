@@ -1,0 +1,60 @@
+use master
+GO
+
+DROP DATABASE TOURNAMENTS_CA_ROSANA
+
+CREATE DATABASE TOURNAMENTS_CA_ROSANA
+GO
+USE TOURNAMENTS_CA_ROSANA
+GO
+
+CREATE SCHEMA Tournaments;
+GO
+
+DROP TABLE IF EXISTS Tournaments.Participants
+
+CREATE TABLE Tournaments.Participants
+(
+    ParticipantId Int NOT NULL
+           CONSTRAINT PKParticipants PRIMARY KEY,
+    FirstName  nvarchar(50) NOT NULL,
+	LastName  nvarchar(50) NOT NULL,
+	BirthDate Date NOT NULL,
+	Email  nvarchar(50) NOT NULL,
+	Address  nvarchar(100) NOT NULL,
+	Password nvarchar (20) NOT NULL
+);
+GO
+
+DROP TABLE IF EXISTS Tournaments.Tournaments
+
+CREATE TABLE Tournaments.Tournaments
+(
+    TournamentId Int NOT NULL
+           CONSTRAINT PKTournaments PRIMARY KEY,
+    Name  nvarchar(50) NOT NULL,
+	Description  nvarchar(50) NOT NULL,
+	Address  nvarchar(100) NOT NULL,
+	Date Date NOT NULL,
+	RegistrationCost   Decimal(5,2) NOT NULL,
+	SportType  varchar(50) NOT NULL,
+	CloseDate Date NOT NULL
+);
+GO
+
+DROP TABLE IF EXISTS Tournaments.Registration
+
+CREATE TABLE Tournaments.Registration
+(
+    ParticipantId  Int NOT NULL
+		CONSTRAINT FKParticipantId$Ref$Participants
+                REFERENCES Tournaments.Participants (ParticipantId),
+    EventId  Int NOT NULL
+		CONSTRAINT FKTournamentId$Ref$Tournaments
+                REFERENCES Tournaments.Tournaments (TournamentId),
+	AmountPaid   Decimal(5,2) NOT NULL,
+	PaymentDate Date NOT NULL
+);
+GO
+
+SELECT CONVERT (TIME, SYSDATETIME())
