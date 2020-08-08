@@ -58,3 +58,309 @@ CREATE TABLE Tournaments.Registration
 GO
 
 SELECT CONVERT (TIME, SYSDATETIME())
+
+
+Final exam
+
+USE master
+GO
+
+DROP DATABASE IF EXISTS Sports_CA_ROSANA
+GO
+
+CREATE DATABASE Sports_CA_ROSANA
+GO
+
+USE Sports_CA_ROSANA
+GO
+
+DROP SCHEMA IF EXISTS Events
+GO
+
+CREATE SCHEMA Events
+GO
+
+DROP TABLE IF EXISTS Events.Participants 
+GO
+
+CREATE TABLE Events.Participants 
+(
+    ParticipantId INT IDENTITY(1,1) CONSTRAINT PK_ParticipantId PRIMARY KEY,
+    FullName nVARCHAR(100) NOT NULL,
+    BirthDate Date NOT NULL CHECK ((DATEDIFF(YEAR,CONVERT(DATE,GETDATE(),101), CAST(BirthDate as DATE))*-1)>= 16),
+    Email nVARCHAR(50) NOT NULL UNIQUE,
+    Address nVARCHAR(100) NOT NULL,
+    Password nVARCHAR(20) NOT NULL,
+)
+
+SELECT * FROM Events.Participants
+
+DROP TABLE IF EXISTS Events.Events 
+GO
+
+CREATE TABLE Events.Events 
+(
+    EventId INT IDENTITY(1,1) CONSTRAINT PK_EventId PRIMARY KEY,
+    Name nVARCHAR(50) NOT NULL,
+	Description nVARCHAR(100) NOT NULL,
+	Location nVARCHAR(100) NOT NULL,
+    Date Date NOT NULL,
+    RegistrationCost  DECIMAL(5,2) NOT NULL,
+    SportType  VARCHAR(100) NOT NULL,
+    CloseDate  Date NOT NULL,
+)
+
+SELECT * FROM Events.Events
+
+DROP TABLE IF EXISTS Events.Registration
+GO
+CREATE TABLE Events.Registration(
+    RegistrationId INT IDENTITY(1,1) CONSTRAINT PK_RegistrationID PRIMARY KEY,
+	RegDate DATE DEFAULT GETDATE(),
+    AmountPaid DECIMAL(5,2) NOT NULL,
+    PaymentDay DATE DEFAULT GETDATE(),
+    EventId INT NOT NULL,
+    ParticipantId INT NOT NULL
+)
+
+ALTER TABLE Events.Registration
+ADD CONSTRAINT FX1_EventId_Event_Registration
+    FOREIGN KEY (EventId)
+    REFERENCES Events.Events(EventId)
+GO
+ALTER TABLE Events.Registration
+ADD CONSTRAINT FX2_ParticipantId_Participant_Registration
+    FOREIGN KEY (ParticipantId)
+    REFERENCES Events.Participants(ParticipantId)
+GO
+
+INSERT INTO Events.Participants (FullName, BirthDate, Email, Address, Password) VALUES
+('Rosana Silva', '1984-08-07', 'rosana.ea@gmail.com', '1, Arrow, Toronto, Ontario, Canada', '12345')
+
+SELECT * FROM Events.Participants
+
+INSERT INTO Events.Events (Name, Description, Location, Date, RegistrationCost, SportType, CloseDate) VALUES
+('Toronto FC Children’s Day Cup', 'Family friendly event!', '170 Princes Blvd, Toronto, ON, M6K 3C3', '2019-05-30', '15.50', 'Soccer',  '2019-05-25')
+
+SELECT * FROM Events.Events
+
+UPDATE Events.Events
+SET RegistrationCost = '12.50', Description = 'All ages welcome. Family friendly event!'
+WHERE EventId = '2';
+
+SELECT * FROM Events.Events
+
+CREATE INDEX index_Events
+ON Events.Events (Name, SportType); 
+
+CREATE INDEX index_Participants
+ON Events.Participants (FullName, Email, Address); 
+
+DROP PROCEDURE IF EXISTS Events.ParticipantInsert
+GO
+CREATE PROCEDURE Events.ParticipantInsert
+(
+    @FullName nVARCHAR(100),
+    @BirthDate DATE,
+	@Email nVARCHAR(100),
+    @Address nVARCHAR(100),
+    @Password VARCHAR(20)
+)AS
+BEGIN
+    BEGIN TRY
+        INSERT INTO Events.Participant ([FullName], [BirthDate], [Email], [Address], [Password]) VALUES
+        (@FullName, @BirthDate, @Email, @Address, @Password)
+    END TRY
+    BEGIN CATCH
+        SELECT
+            ERROR_NUMBER() AS ErrorNumber  
+            ,ERROR_SEVERITY() AS ErrorSeverity  
+            ,ERROR_STATE() AS ErrorState  
+            ,ERROR_PROCEDURE() AS ErrorProcedure  
+            ,ERROR_LINE() AS ErrorLine  
+            ,ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH
+END
+
+DROP PROCEDURE IF EXISTS Events.ParticipantUpdate
+GO
+CREATE PROCEDURE Events.ParticipantUpdate
+(
+    @ParticipantId Int,
+    @FullName VARCHAR(100),
+    @BirthDate DATE,
+	@Email VARCHAR(100),
+    @Address VARCHAR(100),
+    @Password VARCHAR(20)
+)AS
+BEGIN
+    BEGIN TRY
+        UPDATE Events.Participants SET
+        FullName = @FullName, BirthDate = @BirthDate, @Address = Address, Password = @Password
+        WHERE ParticipantID = @ParticipantId
+    END TRY
+    BEGIN CATCH
+        SELECT
+            ERROR_NUMBER() AS ErrorNumber  
+            ,ERROR_SEVERITY() AS ErrorSeverity  
+            ,ERROR_STATE() AS ErrorState  
+            ,ERROR_PROCEDURE() AS ErrorProcedure  
+            ,ERROR_LINE() AS ErrorLine  
+            ,ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH
+END
+
+DROP PROCEDURE IF EXISTS Events.DeleteParticipant
+GO
+CREATE PROCEDURE Events.DeleteParticipant(
+    @ParticipantId INT
+)AS
+BEGIN
+    BEGIN TRY
+        DELETE FROM Events.Participant WHERE ParticipantId = @ParticipantId
+    END TRY
+    BEGIN CATCH
+        SELECT
+            ERROR_NUMBER() AS ErrorNumber  
+            ,ERROR_SEVERITY() AS ErrorSeverity  
+            ,ERROR_STATE() AS ErrorState  
+            ,ERROR_PROCEDURE() AS ErrorProcedure  
+            ,ERROR_LINE() AS ErrorLine  
+            ,ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH
+END
+
+DROP PROCEDURE IF EXISTS Events.EventInsert
+GO
+CREATE PROCEDURE Events.EventInsert
+(
+    @Name VARCHAR(50),
+    @Description VARCHAR(100),
+    @Location VARCHAR(100),
+    @Date DATE,
+    @RegistrationCost DECIMAL(5,2),
+	@SportType VARCHAR(100),
+    @CloseDate DATE
+    
+)AS
+BEGIN
+    BEGIN TRY
+        INSERT INTO Events.Event ([Name], [Description], [Location], [Date], RegistrationCost, SportType, CloseDate) VALUES
+        (@Name, @Description, @Location, @Date, @RegistrationCost, @SportType, @CloseDate)
+    END TRY
+    BEGIN CATCH
+        SELECT
+            ERROR_NUMBER() AS ErrorNumber  
+            ,ERROR_SEVERITY() AS ErrorSeverity  
+            ,ERROR_STATE() AS ErrorState  
+            ,ERROR_PROCEDURE() AS ErrorProcedure  
+            ,ERROR_LINE() AS ErrorLine  
+            ,ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH
+END
+
+DROP PROCEDURE IF EXISTS Events.EventUpdate
+GO
+CREATE PROCEDURE Events.EventUpdate
+(
+    @EventId Int,
+	@Name VARCHAR(50),
+    @Description VARCHAR(100),
+    @Location VARCHAR(100),
+    @Date DATE,
+    @RegistrationCost DECIMAL(5,2),
+	@SportType VARCHAR(100),
+    @CloseDate DATE
+
+)AS
+BEGIN
+    BEGIN TRY
+       UPDATE Events.Event
+       SET [Name] = @Name, [Description] = @Description, [Location] = @Location, [Date] = @Date,
+            RegistrationCost = @RegistrationCost, CloseDate = @CloseDate
+       WHERE EventID = @EventId
+    END TRY
+    BEGIN CATCH
+        SELECT
+            ERROR_NUMBER() AS ErrorNumber  
+            ,ERROR_SEVERITY() AS ErrorSeverity  
+            ,ERROR_STATE() AS ErrorState  
+            ,ERROR_PROCEDURE() AS ErrorProcedure  
+            ,ERROR_LINE() AS ErrorLine  
+            ,ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH
+END
+
+DROP PROCEDURE IF EXISTS Events.EventDelete
+GO
+CREATE PROCEDURE Events.EventDelete
+(
+    @EventId INT
+)AS
+BEGIN
+    BEGIN TRY
+       DELETE FROM Events.Events WHERE EventID = @EventId
+    END TRY
+    BEGIN CATCH
+        SELECT
+            ERROR_NUMBER() AS ErrorNumber  
+            ,ERROR_SEVERITY() AS ErrorSeverity  
+            ,ERROR_STATE() AS ErrorState  
+            ,ERROR_PROCEDURE() AS ErrorProcedure  
+            ,ERROR_LINE() AS ErrorLine  
+            ,ERROR_MESSAGE() AS ErrorMessage;
+    END CATCH
+END
+
+DROP VIEW IF EXISTS Events.Registrations
+GO
+CREATE VIEW Events.Registrations AS
+SELECT
+    e.[Name] AS 'EventName', e.[Description], e.[Date], e.[Location], e.[RegistrationCost], e.[SportType], e.[CloseDate]
+FROM Events.Registration r
+INNER JOIN Events.Events e
+    ON e.EventID = r.EventID
+GO
+
+DROP FUNCTION IF EXISTS Events.Format$
+GO
+CREATE FUNCTION Events.Format$
+(
+    @Value DECIMAL(5,2),
+    @Language VARCHAR(2)
+)
+RETURNS VARCHAR(MAX) AS
+BEGIN
+    RETURN
+        CASE
+            WHEN LOWER(@Language) = 'fr' THEN CONCAT(@Value,' $')
+            WHEN LOWER(@Language) = 'en' THEN CONCAT('$ ' ,@Value)
+        END
+END
+GO
+
+SELECT Events.Format$(12.42, 'en')
+UNION
+SELECT Events.Format$(12.42, 'fr')
+
+
+DROP FUNCTION IF EXISTS func_getTime
+GO
+
+CREATE FUNCTION func_getTime
+(
+    @Time TIME,
+    @input INT
+)
+RETURNS VARCHAR(100) AS
+BEGIN
+    RETURN
+        CONVERT(varchar, DATEADD(HOUR, @input, @Time), 100)
+END
+GO
+
+SELECT dbo.func_getTime('9:00pm', -3)
+UNION ALL
+SELECT dbo.func_getTime('9:00pm',3)
+
+
